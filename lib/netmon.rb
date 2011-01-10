@@ -54,6 +54,12 @@ class NetMonitor
 					@logger.info 'dont has net at the second time time' if @logger
 					reconnect
 					sleep_time = 0
+					if has_net?
+						@had_net = true
+						@logger.info 'reconnect success' if @logger
+					else 
+						@logger.error 'reconnect failed' if @logger
+					end
 				end
 			end
 			@logger.debug "sleeping for #{sleep_time} sec" if @logger
