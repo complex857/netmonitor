@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../lib/netmon'
+require File.realpath File.join(File.dirname(__FILE__), "..", "lib", "netmon.rb")
 
 require 'test/unit'
 

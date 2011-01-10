@@ -8,7 +8,7 @@ class NetMonitor
 		open("|ping #{@pinghost}", 'r:iso-8859-2')
 	end
 
-	def initialize(opts = {})
+	def initialize(opts = {}, logger = nil)
 		opts = { pinghost: 'dev.progressive.hu', interval: 60, reconnect_sleep: 120 }.merge(opts)
 
 		@pinghost = opts[:pinghost] 
@@ -17,6 +17,7 @@ class NetMonitor
 		
 		@had_net = false
 		@run = true
+		@logger = logger
 	end
 
 	def has_net?()
@@ -33,28 +34,29 @@ class NetMonitor
 	end
 	
 	def reconnect
-		puts 'reconnecting'
+		@logger.warn "reconnect" if @logger
 		sleep(@reconnect_sleep)
 	end
 
 	def monitor!
+		@logger.info "starting up with #{@interval} sleep interval" if @logger
 		while(@run) do
-			puts 'checking'
+			@logger.debug 'checking' if @logger
 			sleep_time = @interval
 			if has_net?
-				puts 'had net'
+				@logger.debug 'has net' if @logger
 				@had_net = true
 			else
-				if not @had_net
-					puts 'dont have net twice'
+				if @had_net
+					@logger.info 'dont has net at the first time' if @logger
+					@had_net = false
+				else
+					@logger.info 'dont has net at the second time time' if @logger
 					reconnect
 					sleep_time = 0
-				else
-					puts 'dont have net at the first time'
-					@had_net = false
 				end
 			end
-			puts "sleeping for #{sleep_time} sec"
+			@logger.debug "sleeping for #{sleep_time} sec" if @logger
 			sleep(sleep_time)
 		end
 	end
