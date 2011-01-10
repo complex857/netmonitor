@@ -10,9 +10,9 @@ log.outputters << FileOutputter.new('netmon', {filename: File.join(File.dirname(
 log.outputters << StdoutOutputter.new('netmon_stdout', formatter: f)
 
 nm = NetMonitor.new({
-	pinghost: 'dev.progressive.hu', 
-	interval: 60, 
-	reconnect_sleep: 120,
+	pinghost: ARGV[2] || 'dev.progressive.hu', 
+	interval: ARGV[0] || 60, 
+	reconnect_sleep: ARGV[1] || 120,
 }, log)
 
 nm.monitor!

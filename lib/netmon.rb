@@ -39,7 +39,7 @@ class NetMonitor
 	end
 
 	def monitor!
-		@logger.info "starting up with #{@interval} sleep interval" if @logger
+		@logger.info "starting interval:#{@interval}, reconnect:#{@reconnect_sleep} ping host:#{@pinghost}" if @logger
 		while(@run) do
 			@logger.debug 'checking' if @logger
 			sleep_time = @interval
