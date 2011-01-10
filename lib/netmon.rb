@@ -15,7 +15,7 @@ class NetMonitor
 		@interval = opts[:interval]
 		@reconnect_sleep = opts[:reconnect_sleep] 
 		
-		@had_net  = false
+		@had_net = false
 		@run = true
 	end
 
@@ -31,6 +31,11 @@ class NetMonitor
 
 		return false;
 	end
+	
+	def reconnect
+		puts 'reconnecting'
+		sleep(@reconnect_sleep)
+	end
 
 	def monitor!
 		while(@run) do
@@ -43,7 +48,7 @@ class NetMonitor
 				if not @had_net
 					puts 'dont have net twice'
 					reconnect
-					sleep_time = @reconnect_sleep
+					sleep_time = 0
 				else
 					puts 'dont have net at the first time'
 					@had_net = false
@@ -53,10 +58,4 @@ class NetMonitor
 			sleep(sleep_time)
 		end
 	end
-
-	private
-		def reconnect
-			puts 'reconnecting'
-			sleep(2)
-		end
 end
