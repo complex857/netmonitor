@@ -5,7 +5,9 @@ include Log4r
 
 
 log = Logger.new 'netmon'
-log.outputters = FileOutputter.new('netmon', {filename: File.join(File.dirname(File.realpath(__FILE__)), 'netmon.log'), formatter: PatternFormatter.new(:pattern => "%d [%l] => %m")})
+f   = PatternFormatter.new(:pattern => "%d [%l] => %m")
+log.outputters << FileOutputter.new('netmon', {filename: File.join(File.dirname(File.realpath(__FILE__)), 'netmon.log'), formatter: f})
+log.outputters << StdoutOutputter.new('netmon_stdout', formatter: f)
 
 nm = NetMonitor.new({
 	pinghost: 'dev.progressive.hu', 
