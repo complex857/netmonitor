@@ -9,10 +9,10 @@ f   = PatternFormatter.new(:pattern => "%d [%l] => %m")
 log.outputters << FileOutputter.new('netmon', {filename: File.join(File.dirname(File.realpath(__FILE__)), 'netmon.log'), formatter: f})
 log.outputters << StdoutOutputter.new('netmon_stdout', formatter: f)
 
-nm = NetMonitor.new({
-	pinghost: ARGV[2] || 'dev.progressive.hu', 
-	interval: ARGV[0] || 60, 
-	reconnect_sleep: ARGV[1] || 120,
-}, log)
+params = {}
+params[:interval] = ARGV[0].to_i if ARGV[0]
+params[:reconnect_sleep] = ARGV[1].to_i if ARGV[1]
+params[:pinghost] = ARGV[2] if ARGV[2]
+params[:uls_path] = ARGV[3] if ARGV[3]
 
-nm.monitor!
+nm = NetMonitor.new(params, log).monitor!

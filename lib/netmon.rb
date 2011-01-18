@@ -1,19 +1,42 @@
 # encoding: UTF-8
 
+require 'timeout'
+
 class NetMonitor
+
+	class NoDeviceError < StandardError
+		def to_s
+			"No USB Line switch device found"
+		end
+	end
+
+	DEVICE_PATTERN = /RE\d{6}/
 
 	attr_accessor :run
 
 	def ping
-		open("|ping #{@pinghost}", 'r:iso-8859-2')
+		begin
+			Timeout::timeout(@ping_timeout) {
+				return io = open("|ping #{@pinghost}", 'r:iso-8859-2')
+			}
+		rescue Timeout::Error
+			Process.kill "TERM", io.pid
+			return ''
+		end
 	end
 
 	def initialize(opts = {}, logger = nil)
-		opts = { pinghost: 'dev.progressive.hu', interval: 60, reconnect_sleep: 120 }.merge(opts)
+		opts = { 
+			pinghost: 'dev.progressive.hu', 
+			interval: 60, 
+			reconnect_sleep: 120,
+			uls_path: "./ULS.exe",
+		}.merge(opts)
 
 		@pinghost = opts[:pinghost] 
 		@interval = opts[:interval]
 		@reconnect_sleep = opts[:reconnect_sleep] 
+		@uls_path = opts[:uls_path] 
 		
 		@had_net = false
 		@run = true
@@ -28,18 +51,59 @@ class NetMonitor
 		return false unless success_line
 
 		m = success_pattern.match(success_line)
-		return true if m[1].to_i > 0;
+		return true if m[1].to_i > 0
 
-		return false;
+		false
+	end
+
+	def disconnect 
+		system("\"#{@uls_path}\" /N=#{@device_name} /S=off")
 	end
 	
+	def connect 
+		system("\"#{@uls_path}\" /N=#{@device_name} /S=on")
+	end
+
+	def device_state
+		detect_first_device if @device_name.nil?
+		raise NoDeviceError unless @device_name
+		m = open("|\"#{@uls_path}\" /N=#{@device_name} /S=query").readlines[0].match /turned (on|off)$/i
+		m[1]
+	end
+
 	def reconnect
 		@logger.warn "reconnect" if @logger
+		@logger.debug "disconnect start" if @logger
+		re = disconnect
+		@logger.debug "disconnect returned #{re}" if @logger
+		sleep(1)
+		@logger.debug "connect" if @logger
+		re = connect
+		@logger.debug "connect returned #{re}" if @logger
+		@logger.debug "sleeping for #{@reconnect_sleep} seconds"
 		sleep(@reconnect_sleep)
+	end
+
+	def device_list
+		open("|\"#{@uls_path}\" /A").readlines
+	end
+
+	def detect_first_device
+		@device_name = device_list.detect do |l|
+			l =~ DEVICE_PATTERN
+		end
+		@device_name.chop! unless @device_name.nil?
+	end
+
+	def has_device?
+		detect_first_device if @device_name.nil?
+		return false if @device_name.nil? or @device_name.match(DEVICE_PATTERN).nil?
+		return true
 	end
 
 	def monitor!
 		@logger.info "starting interval:#{@interval}, reconnect:#{@reconnect_sleep} ping host:#{@pinghost}" if @logger
+		@logger.info "found device: #{detect_first_device}"
 		while(@run) do
 			@logger.debug 'checking' if @logger
 			sleep_time = @interval
