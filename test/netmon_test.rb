@@ -1,17 +1,11 @@
 require File.realpath File.join(File.dirname(__FILE__), "..", "lib", "netmon.rb")
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'wrong'
-class Test::Unit::TestCase
-  include Wrong
-
-  def failure_class
-	MiniTest::Assertion
-  end
-end
+require 'wrong/adapters/minitest'
 include Wrong
 
-class NetMonTest < Test::Unit::TestCase
+class NetMonTest < MiniTest::Unit::TestCase
 	
 	def test_no_net_with_nonexisting_host
 		nm = NetMonitor.new({pinghost: 'no_such_host.net'}).extend(Module.new do 
@@ -19,7 +13,7 @@ class NetMonTest < Test::Unit::TestCase
 				open(File.dirname(__FILE__) + '/nosuchhost_output', 'r:iso-8859-2')
 			end
 		end)
-		assert { nm.has_net? == false }
+		deny { nm.has_net? }
 	end	
 	
 	def test_no_net_with_noresponding_host
@@ -28,7 +22,7 @@ class NetMonTest < Test::Unit::TestCase
 				open(File.dirname(__FILE__) + '/norespond_output', 'r:iso-8859-2')
 			end
 		end)
-		assert { nm.has_net? == false }
+		deny { nm.has_net? }
 	end	
 	
 	def test_no_net_with_no_route_host
@@ -37,7 +31,7 @@ class NetMonTest < Test::Unit::TestCase
 				open(File.dirname(__FILE__) + '/noroute_output', 'r:iso-8859-2')
 			end
 		end)
-		assert { nm.has_net? == false }
+		deny { nm.has_net? }
 	end	
 	
 	def test_has_net
@@ -46,16 +40,12 @@ class NetMonTest < Test::Unit::TestCase
 				open(File.dirname(__FILE__) + '/success_output', 'r:iso-8859-2')
 			end
 		end)
-		assert { nm.has_net? == true }
+		assert { nm.has_net? }
 	end	
 
 	def test_ping_timeout
-		nm = NetMonitor.new({ping_timeout:1}).extend(Module.new do 
-			def ping
-				sleep 10
-				open(File.dirname(__FILE__) + '/success_output', 'r:iso-8859-2')
-			end
-		end)
+		nm = NetMonitor.new({ping_timeout:0.001}) # lets assume that no ping call will succeed that fast (-:
+		deny nm.has_net?
 	end
 
 	def test_detect_first_device_when_theres_a_device
@@ -81,12 +71,12 @@ class NetMonTest < Test::Unit::TestCase
 	# def test_detect_first_device_real
 	# 	nm = NetMonitor.new({pinghost: 'dev.progressive.hu'})
 	# 	assert { nm.detect_first_device.match(NetMonitor::DEVICE_PATTERN) }
-	# 	assert { nm.has_device? == true }
+	# 	assert { nm.has_device? }
 	# end
 
 	# def test_has_net_real_test
 	# 	nm = NetMonitor.new({pinghost: 'dev.progressive.hu'})
-	# 	assert { nm.has_net? == true }
+	# 	assert { nm.has_net? }
 	# end	
 	# 
 	# def test_device_state_real

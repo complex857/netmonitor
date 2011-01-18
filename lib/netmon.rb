@@ -16,12 +16,12 @@ class NetMonitor
 
 	def ping
 		begin
+			io = open("|ping #{@pinghost}", 'r:iso-8859-2')
 			Timeout::timeout(@ping_timeout) {
-				return io = open("|ping #{@pinghost}", 'r:iso-8859-2')
+				return io.readlines
 			}
 		rescue Timeout::Error
-			Process.kill "TERM", io.pid
-			return ''
+			return []
 		end
 	end
 
@@ -31,21 +31,22 @@ class NetMonitor
 			interval: 60, 
 			reconnect_sleep: 120,
 			uls_path: "./ULS.exe",
+			ping_timeout: 10,
 		}.merge(opts)
 
 		@pinghost = opts[:pinghost] 
 		@interval = opts[:interval]
 		@reconnect_sleep = opts[:reconnect_sleep] 
 		@uls_path = opts[:uls_path] 
+		@ping_timeout = opts[:ping_timeout] 
 		
-		@had_net = false
 		@run = true
 		@logger = logger
 	end
 
 	def has_net?()
 		success_pattern = /minimum = \d+ms, maximum = \d+ms, .tlag = (\d+)ms/
-		success_line = ping.readlines.detect do |l|
+		success_line = ping.detect do |l|
 			l =~ success_pattern
 		end
 		return false unless success_line
@@ -104,22 +105,23 @@ class NetMonitor
 	def monitor!
 		@logger.info "starting interval:#{@interval}, reconnect:#{@reconnect_sleep} ping host:#{@pinghost}" if @logger
 		@logger.info "found device: #{detect_first_device}"
+		had_net = false
 		while(@run) do
 			@logger.debug 'checking' if @logger
 			sleep_time = @interval
 			if has_net?
 				@logger.debug 'has net' if @logger
-				@had_net = true
+				had_net = true
 			else
-				if @had_net
+				if had_net
 					@logger.info 'dont has net at the first time' if @logger
-					@had_net = false
+					had_net = false
 				else
 					@logger.info 'dont has net at the second time time' if @logger
 					reconnect
 					sleep_time = 0
 					if has_net?
-						@had_net = true
+						had_net = true
 						@logger.info 'reconnect success' if @logger
 					else 
 						@logger.error 'reconnect failed' if @logger

@@ -11,6 +11,7 @@ GEM
     file-tail (1.0.5)
       spruz (>= 0.1.0)
     log4r (1.1.9)
+    minitest (1.6.0)
     predicated (0.2.2)
     ruby2ruby (1.2.5)
       ruby_parser (~> 2.0)
@@ -37,4 +38,5 @@ PLATFORMS
 
 DEPENDENCIES
   log4r
+  minitest
   wrong
