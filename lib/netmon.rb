@@ -21,7 +21,10 @@ class NetMonitor
 				return io.readlines
 			}
 		rescue Timeout::Error
-			return []
+			@logger.error "Ping call timed out" if @logger
+			return [
+				"no net found\n"
+			]
 		end
 	end
 
@@ -31,7 +34,7 @@ class NetMonitor
 			interval: 60, 
 			reconnect_sleep: 120,
 			uls_path: "./ULS.exe",
-			ping_timeout: 10,
+			ping_timeout: 5,
 		}.merge(opts)
 
 		@pinghost = opts[:pinghost] 
@@ -58,10 +61,12 @@ class NetMonitor
 	end
 
 	def disconnect 
+		detect_first_device if @device_name.nil?
 		system("\"#{@uls_path}\" /N=#{@device_name} /S=off")
 	end
 	
 	def connect 
+		detect_first_device if @device_name.nil?
 		system("\"#{@uls_path}\" /N=#{@device_name} /S=on")
 	end
 

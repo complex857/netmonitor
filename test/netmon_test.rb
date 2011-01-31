@@ -1,9 +1,11 @@
+require 'rubygems'
 require File.realpath File.join(File.dirname(__FILE__), "..", "lib", "netmon.rb")
 
 require 'minitest/autorun'
 require 'wrong'
 require 'wrong/adapters/minitest'
-include Wrong
+include Wrong::Assert
+
 
 class NetMonTest < MiniTest::Unit::TestCase
 	
@@ -67,7 +69,7 @@ class NetMonTest < MiniTest::Unit::TestCase
 		assert { nm.detect_first_device.nil? }
 		deny { nm.has_device? }
 	end
-	
+
 	# def test_detect_first_device_real
 	# 	nm = NetMonitor.new({pinghost: 'dev.progressive.hu'})
 	# 	assert { nm.detect_first_device.match(NetMonitor::DEVICE_PATTERN) }
@@ -78,7 +80,7 @@ class NetMonTest < MiniTest::Unit::TestCase
 	# 	nm = NetMonitor.new({pinghost: 'dev.progressive.hu'})
 	# 	assert { nm.has_net? }
 	# end	
-	# 
+	
 	# def test_device_state_real
 	# 	nm = NetMonitor.new({pinghost: 'dev.progressive.hu'})
 	# 	assert { ['on', 'off'].include? nm.device_state }
