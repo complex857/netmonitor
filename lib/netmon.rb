@@ -45,6 +45,9 @@ class NetMonitor
 		
 		@run = true
 		@logger = logger
+
+		@on_has_net_callbacks   = []
+		@on_no_net_callback = []
 	end
 
 	def has_net?()
@@ -107,20 +110,32 @@ class NetMonitor
 		return true
 	end
 
+	def on_has_net(&block)
+		@logger.debug 'adding new has_net callback' if @logger
+		@on_has_net_callbacks << block;	
+	end
+	
+	def on_no_net(&block)
+		@logger.debug 'adding new no_net callback' if @logger
+		@on_no_net_callback << block;	
+	end
+
 	def monitor!
 		@logger.info "starting interval:#{@interval}, reconnect:#{@reconnect_sleep} ping host:#{@pinghost}" if @logger
 		@logger.info "found device: #{detect_first_device}"
-		had_net = false
+		had_net = true
 		while(@run) do
 			@logger.debug 'checking' if @logger
 			sleep_time = @interval
 			if has_net?
 				@logger.debug 'has net' if @logger
 				had_net = true
+				run_callbacks :has_net
 			else
 				if had_net
 					@logger.info 'dont has net at the first time' if @logger
 					had_net = false
+					run_callbacks :no_net
 				else
 					@logger.info 'dont has net at the second time time' if @logger
 					reconnect
@@ -128,13 +143,32 @@ class NetMonitor
 					if has_net?
 						had_net = true
 						@logger.info 'reconnect success' if @logger
+						run_callbacks :has_net
 					else 
 						@logger.error 'reconnect failed' if @logger
+						run_callbacks :no_net
 					end
 				end
 			end
 			@logger.debug "sleeping for #{sleep_time} sec" if @logger
 			sleep(sleep_time)
+		end
+	end
+
+	private
+	def run_callbacks(type)
+		if type == :has_net
+			cbs = @on_has_net_callbacks
+		elsif type == :no_net
+			cbs = @on_no_net_callback;
+		end
+
+		if cbs
+			@logger.info "running callbacks for :#{type.to_s}" if @logger
+			cbs.each do |cb|
+				re = cb.call
+				@logger.debug "callback returned:#{re}" if @logger
+			end
 		end
 	end
 end
